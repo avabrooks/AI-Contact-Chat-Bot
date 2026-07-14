@@ -1,0 +1,17 @@
+# Secrets - never commit these
+.env
+**/.env
+
+# Local databases (regenerate with seed_data.py)
+*.db
+*.db-journal
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS junk
+.DS_Store
+Thumbs.db

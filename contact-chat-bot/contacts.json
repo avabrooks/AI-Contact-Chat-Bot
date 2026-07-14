@@ -1,0 +1,61 @@
+{
+  "_readme": "Edit this file with your real company directory. Nothing here leaves your machine -- it's read locally by router_engine.py. 'keywords' should describe the kinds of issues this person/department handles, in plain language, so the AI can match against them.",
+  "contacts": [
+    {
+      "name": "Aisha Mohammed",
+      "email": "aisha.mohammed@company.com",
+      "department": "IT",
+      "role": "IT Support Lead",
+      "keywords": "computer problems, laptop issues, monitor/dock/cable requests, password resets, software installs, VPN, wifi, printer issues, new hire equipment"
+    },
+    {
+      "name": "Avan Brooks",
+      "email": "avan.brooks@company.com",
+      "department": "IT",
+      "role": "IT Systems Admin",
+      "keywords": "server issues, network outages, security incidents, account access, asset inventory questions"
+    },
+    {
+      "name": "Ravi Shankar",
+      "email": "ravi.shankar@company.com",
+      "department": "HR",
+      "role": "HR Business Partner",
+      "keywords": "benefits, payroll questions, PTO/time off, onboarding, offboarding, workplace conflicts, policy questions, leave of absence"
+    },
+    {
+      "name": "Elena Kowalski",
+      "email": "elena.kowalski@company.com",
+      "department": "HR",
+      "role": "Recruiting Coordinator",
+      "keywords": "hiring, interview scheduling, job postings, candidate questions"
+    },
+    {
+      "name": "Tyler Osei",
+      "email": "tyler.osei@company.com",
+      "department": "Finance",
+      "role": "Finance Manager",
+      "keywords": "expense reports, reimbursements, invoices, budget questions, purchase orders, vendor payments"
+    },
+    {
+      "name": "Sam Fitzgerald",
+      "email": "sam.fitzgerald@company.com",
+      "department": "Operations",
+      "role": "Office Manager",
+      "keywords": "facilities, building access/badges, desk moves, office supplies, conference room issues, deliveries, parking, cleanliness/maintenance"
+    },
+    {
+      "name": "Grace Nolan",
+      "email": "grace.nolan@company.com",
+      "department": "Marketing",
+      "role": "Marketing Manager",
+      "keywords": "brand/logo requests, website content, social media, event swag, external communications"
+    },
+    {
+      "name": "Derek Kim",
+      "email": "derek.kim@company.com",
+      "department": "Sales",
+      "role": "Sales Operations",
+      "keywords": "CRM issues, sales tools, customer contract questions, quote requests"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IT Asset Assistant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --accent:#2563eb; --bg:#f4f5f7; --bubble-user:#2563eb; --bubble-bot:#ffffff; --text:#1f2430; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); }
+  header { background:#111827; color:#fff; padding:16px 24px; }
+  header h1 { margin:0; font-size:18px; }
+  header p { margin:4px 0 0; font-size:13px; color:#9ca3af; }
+  #chat { max-width:760px; margin:0 auto; padding:24px; display:flex; flex-direction:column; gap:12px; min-height:60vh; }
+  .msg { max-width:80%; padding:10px 14px; border-radius:12px; line-height:1.4; font-size:14px; white-space:pre-wrap; }
+  .msg.user { align-self:flex-end; background:var(--bubble-user); color:#fff; border-bottom-right-radius:2px; }
+  .msg.bot { align-self:flex-start; background:var(--bubble-bot); border:1px solid #e5e7eb; border-bottom-left-radius:2px; }
+  .msg.bot.loading { color:#9ca3af; font-style:italic; }
+  #inputRow { max-width:760px; margin:0 auto 24px; padding:0 24px; display:flex; gap:8px; }
+  #question { flex:1; padding:12px 14px; border-radius:10px; border:1px solid #d1d5db; font-size:14px; }
+  #send { padding:12px 18px; border-radius:10px; border:none; background:var(--accent); color:#fff; font-size:14px; cursor:pointer; }
+  #send:disabled { opacity:0.5; cursor:default; }
+  .examples { max-width:760px; margin:0 auto; padding:0 24px 12px; font-size:12px; color:#6b7280; }
+  .examples span { display:inline-block; background:#eef2ff; color:#3730a3; padding:4px 10px; border-radius:999px; margin:2px 4px 2px 0; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>IT Asset Assistant</h1>
+  <p>Ask about computers, monitors, monitor arms, docks, and cable stock.</p>
+</header>
+
+<div class="examples" id="examples">
+  Try:
+  <span>What computer does Jamie Chen have?</span>
+  <span>How many monitors do we have left?</span>
+  <span>What's on Priya Patel's desk?</span>
+  <span>How many USB-C cables are in stock?</span>
+</div>
+
+<div id="chat"></div>
+
+<div id="inputRow">
+  <input id="question" type="text" placeholder="Ask a question about our IT inventory..." autocomplete="off" />
+  <button id="send">Send</button>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('question');
+const sendBtn = document.getElementById('send');
+
+function addMessage(text, sender, loading=false) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + sender + (loading ? ' loading' : '');
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+async function ask(question) {
+  if (!question.trim()) return;
+  addMessage(question, 'user');
+  input.value = '';
+  sendBtn.disabled = true;
+  const loadingEl = addMessage('Looking that up...', 'bot', true);
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    const data = await res.json();
+    loadingEl.remove();
+    if (!res.ok) {
+      addMessage('Error: ' + (data.detail || 'something went wrong'), 'bot');
+    } else {
+      addMessage(data.answer, 'bot');
+    }
+  } catch (err) {
+    loadingEl.remove();
+    addMessage('Error reaching the server: ' + err.message, 'bot');
+  }
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+sendBtn.addEventListener('click', () => ask(input.value));
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(input.value); });
+document.getElementById('examples').addEventListener('click', (e) => {
+  if (e.target.tagName === 'SPAN') ask(e.target.textContent);
+});
+</script>
+</body>
+</html>

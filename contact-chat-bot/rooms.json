@@ -1,0 +1,10 @@
+{
+  "_readme": "Edit with your real meeting rooms. Used only to suggest a location on the generated .ics invite -- there is no live room-booking system connected.",
+  "rooms": [
+    {"name": "Aspen (4-person)", "location": "HQ - Floor 2", "capacity": 4},
+    {"name": "Birch (8-person)", "location": "HQ - Floor 3", "capacity": 8},
+    {"name": "Cedar (12-person)", "location": "HQ - Floor 4", "capacity": 12},
+    {"name": "Phone Booth 1", "location": "HQ - Floor 2", "capacity": 1},
+    {"name": "Phone Booth 2", "location": "HQ - Floor 3", "capacity": 1}
+  ]
+}

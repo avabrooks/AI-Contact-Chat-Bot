@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Contact Chat Bot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --accent:#0f766e; --bg:#f4f5f7; --text:#1f2430; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); }
+  header { background:#111827; color:#fff; padding:16px 24px; }
+  header h1 { margin:0; font-size:18px; }
+  header p { margin:4px 0 0; font-size:13px; color:#9ca3af; }
+  main { max-width:640px; margin:0 auto; padding:24px; }
+  textarea { width:100%; min-height:90px; padding:12px; border-radius:10px; border:1px solid #d1d5db; font-size:14px; font-family:inherit; resize:vertical; }
+  button { padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-size:14px; cursor:pointer; margin-top:10px; }
+  button:disabled { opacity:0.5; cursor:default; }
+  button.secondary { background:#374151; }
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-top:16px; }
+  .label { font-size:12px; text-transform:uppercase; letter-spacing:0.03em; color:#6b7280; margin-bottom:4px; }
+  .confidence { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+  .confidence.high { background:#dcfce7; color:#166534; }
+  .confidence.medium { background:#fef9c3; color:#854d0e; }
+  .confidence.low { background:#fee2e2; color:#991b1b; }
+  select, input[type=text] { padding:8px; border-radius:8px; border:1px solid #d1d5db; font-size:14px; width:100%; margin-top:4px; }
+  .row { margin-top:10px; }
+  .hint { font-size:12px; color:#6b7280; margin-top:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Contact Chat Bot</h1>
+  <p>Describe your issue in plain text -- I'll point you to the right person and, if you want, help you set up time.</p>
+</header>
+
+<main>
+  <div class="label">What's going on?</div>
+  <textarea id="issue" placeholder="e.g. My health insurance enrollment isn't showing up correctly and I need to fix it before the deadline"></textarea>
+  <button id="routeBtn">Find the right contact</button>
+
+  <div id="result"></div>
+</main>
+
+<script>
+const issueEl = document.getElementById('issue');
+const routeBtn = document.getElementById('routeBtn');
+const resultEl = document.getElementById('result');
+let lastRoute = null;
+
+routeBtn.addEventListener('click', async () => {
+  const issue = issueEl.value.trim();
+  if (!issue) return;
+  routeBtn.disabled = true;
+  resultEl.innerHTML = '<div class="card">Thinking...</div>';
+
+  try {
+    const res = await fetch('/api/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ issue })
+    });
+    const data = await res.json();
+    lastRoute = data;
+    if (!res.ok) {
+      resultEl.innerHTML = `<div class="card">Error: ${data.detail || 'something went wrong'}</div>`;
+      return;
+    }
+    renderResult(data, issue);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="card">Error reaching the server: ${err.message}</div>`;
+  }
+  routeBtn.disabled = false;
+});
+
+function renderResult(data, issue) {
+  if (!data.contact_name) {
+    resultEl.innerHTML = `
+      <div class="card">
+        <div class="label">No confident match</div>
+        <p>${data.reasoning || "I couldn't find a good match in the contact directory for this."}</p>
+        <p class="hint">You may need to add a contact for this topic to contacts.json.</p>
+      </div>`;
+    return;
+  }
+
+  const slotsHtml = (data.suggested_slots || []).map((iso, i) => {
+    const d = new Date(iso);
+    const label = d.toLocaleString(undefined, { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    return `<option value="${iso}">${label}</option>`;
+  }).join('');
+
+  resultEl.innerHTML = `
+    <div class="card">
+      <div class="label">Best contact</div>
+      <div><strong>${data.contact_name}</strong> &mdash; ${data.department || ''}</div>
+      <div>${data.contact_email || ''}</div>
+      <div class="row"><span class="confidence ${data.confidence}">${data.confidence} confidence</span></div>
+      <p class="hint">${data.reasoning || ''}</p>
+    </div>
+
+    <div class="card">
+      <div class="label">Set up time (optional)</div>
+      <label>Meeting subject</label>
+      <input type="text" id="subject" value="${issue.slice(0,60).replace(/"/g,'&quot;')}" />
+
+      <div class="row">
+        <label>Suggested time</label>
+        <select id="slot">${slotsHtml}</select>
+      </div>
+
+      <div class="row">
+        <label>Room (optional, sets invite location)</label>
+        <select id="room"><option value="">No room / virtual</option></select>
+      </div>
+
+      <div class="row">
+        <label>Your name</label>
+        <input type="text" id="reqName" placeholder="Your full name" />
+      </div>
+      <div class="row">
+        <label>Your email</label>
+        <input type="text" id="reqEmail" placeholder="you@company.com" />
+      </div>
+
+      <button id="scheduleBtn">Download calendar invite (.ics)</button>
+      <p class="hint">This downloads a standard calendar invite file to your computer -- nothing is sent automatically. Attach it to an email or drag it into your calendar app.</p>
+    </div>
+  `;
+
+  loadRooms();
+  document.getElementById('scheduleBtn').addEventListener('click', () => downloadInvite(data));
+}
+
+async function loadRooms() {
+  try {
+    const res = await fetch('/api/rooms');
+    const rooms = await res.json();
+    const sel = document.getElementById('room');
+    rooms.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = `${r.name} (${r.location})`;
+      opt.textContent = `${r.name} - ${r.location} (cap ${r.capacity})`;
+      sel.appendChild(opt);
+    });
+  } catch (e) { /* rooms are optional, ignore failures */ }
+}
+
+async function downloadInvite(data) {
+  const subject = document.getElementById('subject').value || 'Meeting';
+  const slot_iso = document.getElementById('slot').value;
+  const location = document.getElementById('room').value;
+  const requester_name = document.getElementById('reqName').value;
+  const requester_email = document.getElementById('reqEmail').value;
+
+  if (!requester_name || !requester_email) {
+    alert('Please fill in your name and email so the invite has an organizer.');
+    return;
+  }
+
+  const res = await fetch('/api/schedule', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contact_name: data.contact_name,
+      contact_email: data.contact_email,
+      subject, slot_iso, location,
+      requester_name, requester_email
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    alert('Error: ' + (err.detail || 'could not build invite'));
+    return;
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'meeting_invite.ics';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
