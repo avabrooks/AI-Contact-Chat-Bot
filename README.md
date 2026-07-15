@@ -1,4 +1,4 @@
-# AI Lab Prototypes
+# AI Lab Prototype
 
 Created a small local web app (FastAPI + a single HTML chat page) powered by Claude, protected by a basic
 login, and meant to run on your machine or an internal server first to then be implemented. 
